@@ -5,6 +5,9 @@ import os
 HOST = ''
 PORT = 80
 
+forbidden_files = [r"C:\\Users\\User\Documents\\HTTP Server\webroot\webroot\\test.html",
+                   r"C:\\Users\\User\Documents\\HTTP Server\webroot\webroot\\secret.html"]
+
 server = socket.socket()
 server.bind((HOST, PORT))
 
@@ -49,12 +52,18 @@ def generate_http_response(file_name):
         with open(file_path, "rb") as file_to_send:
             file_data = file_to_send.read()
         
-        
-        response = (
-            f"HTTP/1.0 200 OK\r\n"
-            f"Content-Length: {file_size}\r\n"
-            f"{get_file_type(file_path)}\r\n\r\n"  
-        ).encode() + file_data
+        if file_path not in forbidden_files:
+            response = (
+                "HTTP/1.0 200 OK\r\n"
+                f"Content-Length: {file_size}\r\n"
+                f"{get_file_type(file_path)}\r\n\r\n"  
+            ).encode() + file_data
+        else:
+            response = (
+                "HTTP/1.0 403 Forbidden\r\n"
+                "Content-Type: text/plain\r\n\r\n"
+                "403 - Forbidden".encode()
+            )
     else:
         response = (
             "HTTP/1.0 404 Not Found\r\n"
@@ -79,5 +88,7 @@ while True:
             send_requested_file(client_socket, http_response)
     else:
         print("NOT OK")
-        client_socket.close()
+        response = ("HTTP/1.0 500 Invalid Request\r\n"
+            "Content-Type: text/plain\r\n\r\n"
+            "500 - Invalid Request").encode()
 
